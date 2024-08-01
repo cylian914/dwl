@@ -1,5 +1,6 @@
 # TODO
 - reload
+- IPC
 
 # dwl - dwm for Wayland
 
