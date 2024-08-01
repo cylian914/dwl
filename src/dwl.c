@@ -93,6 +93,7 @@ typedef union {
 	int i;
 	uint32_t ui;
 	float f;
+	double d;
 	const void *v;
 } Arg;
 
@@ -349,6 +350,7 @@ static void updatemons(struct wl_listener *listener, void *data);
 static void updatetitle(struct wl_listener *listener, void *data);
 static void urgent(struct wl_listener *listener, void *data);
 static void view(const Arg *arg);
+static void viewtag(const Arg *arg);
 static void virtualkeyboard(struct wl_listener *listener, void *data);
 static void virtualpointer(struct wl_listener *listener, void *data);
 static Monitor *xytomon(double x, double y);
@@ -383,6 +385,7 @@ static struct wlr_idle_notifier_v1 *idle_notifier;
 static struct wlr_idle_inhibit_manager_v1 *idle_inhibit_mgr;
 static struct wlr_layer_shell_v1 *layer_shell;
 static struct wlr_output_manager_v1 *output_mgr;
+static struct wlr_alpha_modifier_v1 *alpha_control_mgr;
 static struct wlr_gamma_control_manager_v1 *gamma_control_mgr;
 static struct wlr_virtual_keyboard_manager_v1 *virtual_keyboard_mgr;
 static struct wlr_virtual_pointer_manager_v1 *virtual_pointer_mgr;
@@ -433,6 +436,17 @@ static xcb_atom_t netatom[NetLast];
 #include "client.h"
 
 /* function implementations */
+/*void
+alpha(const Arg *arg)
+{
+	Client *c = focustop(selmon);
+	struct wlr_surface *f = client_surface(c);
+	struct wlr_alpha_modifier_surface_v1 alsf;
+
+	if ((alsf = surface_from_wlr_surface(f)))
+		alsf->pending.multiplier = arg->d;
+}*/
+
 void
 applybounds(Client *c, struct wlr_box *bbox)
 {
@@ -2244,7 +2258,24 @@ run(char *startup_cmd)
 		close(piperw[1]);
 		close(piperw[0]);
 	}
-
+	if (autostart) {
+		int piperw[2];
+		if (pipe(piperw) < 0)
+			die("startup: pipe:");
+		if ((child_pid = fork()) < 0)
+			die("startup: fork:");
+		if (child_pid == 0) {
+			setsid();
+			dup2(piperw[0], STDIN_FILENO);
+			close(piperw[0]);
+			close(piperw[1]);
+			execl("/bin/sh", "/bin/sh", "-c", autostart, NULL);
+			die("startup: execl:");
+		}
+		dup2(piperw[1], STDOUT_FILENO);
+		close(piperw[1]);
+		close(piperw[0]);
+	}	
 	/* Mark stdout as non-blocking to avoid people who does not close stdin
 	 * nor consumes it in their startup script getting dwl frozen */
 	if (fd_set_nonblock(STDOUT_FILENO) < 0)
@@ -2504,7 +2535,7 @@ setup(void)
 	wlr_single_pixel_buffer_manager_v1_create(dpy);
 	wlr_fractional_scale_manager_v1_create(dpy, 1);
 	wlr_presentation_create(dpy, backend);
-	wlr_alpha_modifier_v1_create(dpy);
+	alpha_control_mgr = wlr_alpha_modifier_v1_create(dpy);
 
 	/* Initializes the interface used to implement urgency hints */
 	activation = wlr_xdg_activation_v1_create(dpy);
@@ -2957,6 +2988,13 @@ view(const Arg *arg)
 	focusclient(focustop(selmon), 1);
 	arrange(selmon);
 	printstatus();
+}
+
+void
+viewtag(const Arg *arg)
+{
+	tag(arg);
+	view(arg);
 }
 
 void
