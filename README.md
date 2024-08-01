@@ -1,3 +1,6 @@
+# TODO
+## reload
+
 # dwl - dwm for Wayland
 
 Join us on our IRC channel: [#dwl on Libera Chat]  
