@@ -1,5 +1,5 @@
 # TODO
-## reload
+- reload
 
 # dwl - dwm for Wayland
 
