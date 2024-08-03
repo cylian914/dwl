@@ -44,17 +44,19 @@ src/util.o: src/util.c src/util.h
 # to your build system yourself and provide them in the include path.
 WAYLAND_SCANNER   = `$(PKG_CONFIG) --variable=wayland_scanner wayland-scanner`
 
-$(proto.h):
+$(proto.h): proto.h
 	$(eval temp := $(notdir $@))
 	$(eval temp := $(temp:-protocol.h=.xml))
 	$(eval temp := $(filter %$(temp), $(proto)))
 	$(eval temp := $(subst !, , $(temp)))
 	$(WAYLAND_SCANNER) $(temp) $@
+proto.h:
+	mkdir -p proto.h
 
 config.h:
 	cp config.def.h $@
 clean:
-	rm -f dwl *.o *-protocol.h
+	rm -rf dwl *.o *-protocol.h proto.h
 
 dist: clean
 	mkdir -p dwl-$(VERSION)
