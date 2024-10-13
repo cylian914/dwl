@@ -1250,6 +1250,8 @@ destroynotify(struct wl_listener *listener, void *data)
 {
 	/* Called when the xdg_toplevel is destroyed. */
 	Client *c = wl_container_of(listener, c, destroy);
+	bool t = 0;
+
 	wl_list_remove(&c->destroy.link);
 	wl_list_remove(&c->set_title.link);
 	wl_list_remove(&c->fullscreen.link);
@@ -1260,6 +1262,7 @@ destroynotify(struct wl_listener *listener, void *data)
 		wl_list_remove(&c->configure.link);
 		wl_list_remove(&c->dissociate.link);
 		wl_list_remove(&c->set_hints.link);
+		
 	} else
 #endif
 	{
@@ -3156,7 +3159,7 @@ run(char *startup_cmd)
 		close(piperw[1]);
 		close(piperw[0]);
 	}
-	if (autostart) {
+	#ifdef autostart
 		int piperw[2];
 		if (pipe(piperw) < 0)
 			die("startup: pipe:");
@@ -3174,6 +3177,7 @@ run(char *startup_cmd)
 		close(piperw[1]);
 		close(piperw[0]);
 	}	
+	#endif
 	/* Mark stdout as non-blocking to avoid people who does not close stdin
 	 * nor consumes it in their startup script getting dwl frozen */
 	if (fd_set_nonblock(STDOUT_FILENO) < 0)
